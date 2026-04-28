@@ -1,0 +1,212 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# ============================================================================
+# PROJECT METADATA & CONFIGURATION
+# Idea-To-Prod: Multi-Agent Code Generation Platform
+# ============================================================================
+
+[project]
+name = "idea-to-prod"
+version = "0.1.0"
+description = "Multi-agent platform that transforms application ideas into fully implemented, tested, and deployable code"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "AI For Dev Team", email = "contact@aifordev.com"}
+]
+keywords = ["ai", "agents", "code-generation", "multi-agent", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    # Core Agent Frameworks
+    "agno>=0.1.0",              # Primary: Modern multi-agent framework
+    "langchain>=0.1.0",         # LLM chains and utilities
+    "langgraph>=0.0.1",         # Workflow orchestration and state management
+    
+    # LLM Providers & APIs
+    "openai>=1.0.0",            # GPT-4 for code generation & testing
+    "anthropic>=0.7.0",         # Claude for design & documentation
+    "google-generativeai>=0.3.0",  # Gemini for document analysis
+    
+    # MCP (Model Context Protocol) Integration
+    "mcp-use>=0.1.0",           # Programmatic MCP server communication
+    
+    # Google APIs
+    "google-auth-oauthlib>=1.0.0",      # Google authentication
+    "google-api-python-client>=2.100.0", # Google Drive & other APIs
+    
+    # External Services APIs
+    "jira>=3.10.0",             # Jira task management client
+    "pygithub>=2.1.0",          # GitHub repository management
+    
+    # Testing & Browser Automation
+    "playwright>=1.40.0",       # Browser testing framework
+    
+    # Data & Configuration
+    "pydantic>=2.0.0",          # Data validation and settings management
+    "python-dotenv>=1.0.0",     # Environment variable management
+    "pyyaml>=6.0.0",            # YAML configuration parsing
+    
+    # HTTP & Networking
+    "requests>=2.31.0",         # HTTP client library
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+]
+
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+    "mkdocstrings[python]>=0.23.0",
+]
+
+mcp = [
+    "mcp>=0.1.0",
+]
+
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "responses>=0.24.0",  # Mock HTTP responses
+]
+
+all = [
+    "idea-to-prod[dev,docs,mcp,test]",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/idea-to-prod"
+Documentation = "https://github.com/yourusername/idea-to-prod#readme"
+Repository = "https://github.com/yourusername/idea-to-prod.git"
+Issues = "https://github.com/yourusername/idea-to-prod/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I"]
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]
+
+# ============================================================================
+# TOOL ARCHITECTURE DOCUMENTATION
+# ============================================================================
+# 
+# AGENT FRAMEWORKS:
+#   - Agno (Primary):     Modern, lightweight multi-agent framework
+#   - LangChain:          LLM utilities and chain abstractions
+#   - LangGraph:          Workflow orchestration and state management
+#
+# MCP (Model Context Protocol) SERVERS:
+#   - MCP-Use:            Programmatic MCP server communication
+#   - Google Drive MCP:    Document storage (Agent 1, 2)
+#   - Jira MCP:           Task management (Agent 2, 3)
+#   - GitHub MCP:         Repository management (Agent 3, 4)
+#   - Playwright MCP:     Test execution (Agent 5)
+#
+# LLM PROVIDERS:
+#   - OpenAI:             GPT-4 for code generation (Agent 3)
+#                         GPT-4 Turbo for testing (Agent 4)
+#   - Anthropic (Claude): Design & documentation (Agent 1, 2)
+#   - Google Gemini:      Document analysis & review
+#
+# EXTERNAL SERVICES:
+#   - Google Drive API:   Design document storage
+#   - Jira API:           Development task management
+#   - GitHub API:         Code repository management
+#   - Playwright:         Test automation & execution
+#
+# DATA & CONFIG:
+#   - Pydantic:           Data validation & type safety
+#   - PyYAML:             Configuration file parsing
+#   - Python Dotenv:      Environment variable management
+#   - Requests:           HTTP client for APIs
+#
+# See TOOLS_DEPENDENCIES.md for complete details and architecture diagram
+# ============================================================================
+
