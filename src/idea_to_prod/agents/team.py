@@ -134,6 +134,157 @@ Make sure to communicate clearly between agents and provide detailed outputs at 
         
         return results
     
+    def test_mcp_connections(self) -> dict:
+        """
+        Test connectivity and functionality of all MCP servers across all platforms.
+        
+        Checks connections to:
+        - GitHub MCP
+        - Google Drive MCP
+        - Jira MCP
+        - Playwright MCP
+        
+        Returns:
+            dict: Results of MCP connectivity tests containing:
+                - 'success': bool indicating if all MCPs are connected
+                - 'platform_results': dict mapping platform names to their test results
+                - 'connected_platforms': list of successfully connected platforms
+                - 'failed_platforms': list of platforms that failed connection
+                - 'errors': dict mapping platform names to error messages (if any)
+        """
+        results = {
+            "success": False,
+            "platform_results": {},
+            "connected_platforms": [],
+            "failed_platforms": [],
+            "errors": {}
+        }
+        
+        # Define MCPs to test
+        mcps_to_test = {
+            "GitHub": self._test_github_mcp,
+            "Google Drive": self._test_google_drive_mcp,
+            "Jira": self._test_jira_mcp,
+            "Playwright": self._test_playwright_mcp
+        }
+        
+        # Test each MCP
+        for platform_name, test_func in mcps_to_test.items():
+            try:
+                test_result = test_func()
+                results["platform_results"][platform_name] = test_result
+                
+                if test_result["connected"]:
+                    results["connected_platforms"].append(platform_name)
+                else:
+                    results["failed_platforms"].append(platform_name)
+                    if "error" in test_result:
+                        results["errors"][platform_name] = test_result["error"]
+                        
+            except Exception as e:
+                results["failed_platforms"].append(platform_name)
+                results["errors"][platform_name] = str(e)
+                results["platform_results"][platform_name] = {
+                    "connected": False,
+                    "error": str(e)
+                }
+        
+        # Overall success if all platforms are connected
+        results["success"] = len(results["failed_platforms"]) == 0
+        
+        return results
+    
+    def _test_github_mcp(self) -> dict:
+        """Test GitHub MCP connectivity."""
+        try:
+            from ..mcp_servers.github_mcp import GitHubMCPServer
+            from ..mcp_servers.config.github_config import create_config
+            
+            config = create_config()
+            server = GitHubMCPServer(config)
+            
+            # Attempt a basic operation to verify connectivity
+            result = server.get_user_info()
+            
+            return {
+                "connected": result.get("success", False),
+                "message": "GitHub MCP is connected and functional",
+                "details": result
+            }
+        except Exception as e:
+            return {
+                "connected": False,
+                "error": f"GitHub MCP connection failed: {str(e)}"
+            }
+    
+    def _test_google_drive_mcp(self) -> dict:
+        """Test Google Drive MCP connectivity."""
+        try:
+            from ..mcp_servers.google_drive_mcp import GoogleDriveMCPServer
+            from ..mcp_servers.config.google_drive_config import create_config
+            
+            config = create_config()
+            server = GoogleDriveMCPServer(config)
+            
+            # Attempt a basic operation to verify connectivity
+            result = server.list_files()
+            
+            return {
+                "connected": result.get("success", False),
+                "message": "Google Drive MCP is connected and functional",
+                "details": result
+            }
+        except Exception as e:
+            return {
+                "connected": False,
+                "error": f"Google Drive MCP connection failed: {str(e)}"
+            }
+    
+    def _test_jira_mcp(self) -> dict:
+        """Test Jira MCP connectivity."""
+        try:
+            from ..mcp_servers.jira_mcp import JiraMCPServer
+            from ..mcp_servers.config.jira_config import create_config
+            
+            config = create_config()
+            server = JiraMCPServer(config)
+            
+            # Attempt a basic operation to verify connectivity
+            result = server.get_jira_info()
+            
+            return {
+                "connected": result.get("success", False),
+                "message": "Jira MCP is connected and functional",
+                "details": result
+            }
+        except Exception as e:
+            return {
+                "connected": False,
+                "error": f"Jira MCP connection failed: {str(e)}"
+            }
+    
+    def _test_playwright_mcp(self) -> dict:
+        """Test Playwright MCP connectivity."""
+        try:
+            from ..mcp_servers.playwright_mcp import PlaywrightMCPServer
+            from ..mcp_servers.config.playwright_config import create_config
+            
+            config = create_config()
+            server = PlaywrightMCPServer(config)
+            
+            # Attempt a basic operation to verify connectivity
+            result = server.get_browser_info()
+            
+            return {
+                "connected": result.get("success", False),
+                "message": "Playwright MCP is connected and functional",
+                "details": result
+            }
+        except Exception as e:
+            return {
+                "connected": False,
+                "error": f"Playwright MCP connection failed: {str(e)}"
+            }
     
     def reset(self):
         """Reset all agents to initial state."""
