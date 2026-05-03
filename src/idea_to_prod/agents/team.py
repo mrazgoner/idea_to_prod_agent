@@ -21,7 +21,7 @@ from .agent_4_test_generation import create_test_generation_agent
 from .agent_5_test_execution import create_test_execution_agent
 
 
-class IdeaToProaTeam:
+class IdeaToProdTeam:
     """
     Idea-To-Prod Agent Team Orchestrator
     
@@ -95,26 +95,25 @@ Make sure to communicate clearly between agents and provide detailed outputs at 
         """
         results = {
             "success": False,
-            "enabled_steps": self.steps_enabled,
+            "enabled_steps": steps_enabled if steps_enabled else [True, True, True, True, True],
             "step_results": {},
             "errors": [],
             "skipped_steps": []
         }
 
         if steps_enabled is None:
-            self.steps_enabled = [True, True, True, True, True]
+            steps_enabled = [True, True, True, True, True]
         else:
             if len(steps_enabled) != 5:
                 raise ValueError(f"steps_enabled must have exactly 5 boolean values, got {len(steps_enabled)}")
-            self.steps_enabled = steps_enabled
         
         try:
             # Log enabled steps
             enabled_step_names = [
-                name for name, enabled in zip(self.STEP_NAMES, self.steps_enabled) if enabled
+                name for name, enabled in zip(self.STEP_NAMES, steps_enabled) if enabled
             ]
             skipped_step_names = [
-                name for name, enabled in zip(self.STEP_NAMES, self.steps_enabled) if not enabled
+                name for name, enabled in zip(self.STEP_NAMES, steps_enabled) if not enabled
             ]
             
             if skipped_step_names:
@@ -137,25 +136,20 @@ Make sure to communicate clearly between agents and provide detailed outputs at 
     
     
     def reset(self):
-        """Reset all agents to initial state, maintaining current step configuration."""
+        """Reset all agents to initial state."""
         try:
-            # Re-instantiate agents while keeping the same steps_enabled configuration
-            steps_config = self.steps_enabled.copy()
-            self.__init__(steps_enabled=steps_config)
+            # Re-instantiate agents
+            self.__init__()
         except Exception as e:
             print(f"Error resetting team: {e}")
 
 
-def create_team() -> IdeaToProaTeam:
+def create_team() -> IdeaToProdTeam:
     """
     Create and return an Idea-To-Prod Agent Team.
     
-    Args:
-        steps_enabled: Optional vector of 5 booleans determining which steps to perform.
-                      If None, all steps are enabled by default.
-                      Order: [HL Design, Detailed Design, Code Gen, Test Gen, Test Exec]
-    
     Returns:
-        IdeaToProaTeam: Configured team ready to process ideas
+        IdeaToProdTeam: Configured team ready to process ideas.
+                       All pipeline steps enabled by default.
     """
-    return IdeaToProaTeam()
+    return IdeaToProdTeam()
