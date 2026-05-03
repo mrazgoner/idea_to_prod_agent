@@ -59,6 +59,13 @@ dependencies = [
     
     # HTTP & Networking
     "requests>=2.31.0",         # HTTP client library
+    
+    # Web UI Server
+    "fastapi>=0.104.0",         # Web framework for UI server
+    "uvicorn>=0.24.0",          # ASGI server for FastAPI
+    
+    # Desktop UI
+    "PyQt6>=6.5.0",             # Desktop application framework
 ]
 
 [project.optional-dependencies]
@@ -80,6 +87,15 @@ docs = [
     "mkdocstrings[python]>=0.23.0",
 ]
 
+ui = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+]
+
+desktop = [
+    "PyQt6>=6.5.0",
+]
+
 mcp = [
     "mcp>=0.1.0",
 ]
@@ -93,7 +109,7 @@ test = [
 ]
 
 all = [
-    "idea-to-prod[dev,docs,mcp,test]",
+    "idea-to-prod[dev,docs,ui,desktop,mcp,test]",
 ]
 
 [project.urls]

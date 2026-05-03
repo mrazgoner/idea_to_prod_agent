@@ -17,7 +17,7 @@ from .agent_2_detailed_design import create_detailed_design_agent
 from .agent_3_code_generation import create_code_generation_agent
 from .agent_4_test_generation import create_test_generation_agent
 from .agent_5_test_execution import create_test_execution_agent
-from .team import IdeaToProaTeam, create_team
+from .team import IdeaToProdTeam, create_team
 
 __all__ = [
     "create_hl_design_agent",
@@ -25,6 +25,6 @@ __all__ = [
     "create_code_generation_agent",
     "create_test_generation_agent",
     "create_test_execution_agent",
-    "IdeaToProaTeam",
+    "IdeaToProdTeam",
     "create_team",
 ]
