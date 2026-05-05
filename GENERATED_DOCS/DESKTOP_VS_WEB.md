@@ -2,6 +2,26 @@
 
 Comparison and guidance for choosing between the two interfaces.
 
+## Key Point: Shared Services
+
+Both Desktop App and Web Server use the **same service layer**:
+
+```
+Desktop App (PyQt6)     Web Server (FastAPI)
+        ↓                       ↓
+     Both use ← MCPSetupService
+                    ↓
+     Both use ← MCPConnectionService
+                    ↓
+     Both use ← ConfigStore
+```
+
+This means:
+- ✅ Configuration entered in one is available to the other
+- ✅ MCP tests are identical in both interfaces
+- ✅ Agents receive the same initialized MCPs
+- ✅ No code duplication between UI layers
+
 ## Quick Comparison Table
 
 | Feature | Desktop App | Web UI |

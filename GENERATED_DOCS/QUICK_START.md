@@ -1,8 +1,28 @@
 # Quick Installation Guide
 
-## All Tools Configured for Idea-To-Prod
+## System Components
 
-### 1. List of All Tools (Mentioned in Architecture)
+### Core Layers
+
+1. **Services Layer** (`src/idea_to_prod/services/`)
+   - `MCPSetupService` - Handles MCP configuration and testing
+   - `MCPConnectionService` - Initializes and manages MCP instances
+   - `ConfigStore` - Persists configuration data
+
+2. **Agent Layer** (`src/idea_to_prod/agents/`)
+   - 5 specialized agents orchestrated by `IdeaToProdTeam`
+   - Uses MCPs via MCPConnectionService
+
+3. **MCP Layer** (`src/idea_to_prod/mcp_servers/`)
+   - GitHub, Jira, Google Drive, Playwright MCPs
+   - Each with configuration and implementation files
+
+4. **UI Layer**
+   - **Desktop App**: `desktop_app.py` (PyQt6 native)
+   - **Web Server**: `ui_server.py` (FastAPI)
+   - Both use services layer for all MCP operations
+
+
 
 #### Agent Frameworks (3)
 - ✅ **Agno** - Primary multi-agent framework

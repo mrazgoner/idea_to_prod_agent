@@ -17,9 +17,76 @@ Receive a high-level application idea and automatically generate:
 
 ## System Architecture
 
+### Complete Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│         UI Layer (Dual Interface)                   │
+│  ┌──────────────────┐    ┌──────────────────┐      │
+│  │  Desktop App     │    │   Web Server     │      │
+│  │   (PyQt6)        │    │  (FastAPI)       │      │
+│  └────────┬─────────┘    └────────┬─────────┘      │
+└───────────┼──────────────────────┼────────────────┘
+            │                      │
+┌───────────▼──────────────────────▼────────────────┐
+│   Service Layer (Shared Logic)                    │
+│  ┌──────────────────────────────────────────┐    │
+│  │   MCPSetupService                        │    │
+│  │   - load_config()                        │    │
+│  │   - save_config()                        │    │
+│  │   - validate_config()                    │    │
+│  │   - test_mcp()                           │    │
+│  └──────────────────┬───────────────────────┘    │
+│                     │                             │
+│  ┌──────────────────▼───────────────────────┐    │
+│  │   MCPConnectionService                   │    │
+│  │   - initialize_mcp()                     │    │
+│  │   - get_mcp_status()                     │    │
+│  │   - test_all_mcps()                      │    │
+│  └──────────────────┬───────────────────────┘    │
+│                     │                             │
+│  ┌──────────────────▼───────────────────────┐    │
+│  │   ConfigStore (Persistence)              │    │
+│  │   - JSON/Database storage                │    │
+│  └──────────────────────────────────────────┘    │
+└───────────┬──────────────────────────────────────┘
+            │
+┌───────────▼──────────────────────────────────────┐
+│   Agent Pipeline Layer                           │
+│  ┌─────────────────────────────────────────────┐ │
+│  │   IdeaToProdTeam (Orchestrator)             │ │
+│  │   - Initialized with MCPs from services    │ │
+│  │   - Requests MCPs on-demand                │ │
+│  └───────┬───────────────┬───────────────────┬┘ │
+│          │               │                   │  │
+│    ┌─────▼───┐    ┌──────▼───┐      ┌──────▼──┐│
+│    │ Agent 1 │    │ Agent 2  │ ...  │ Agent 5 ││
+│    │ HL Des  │    │ Detailed │      │Test Val ││
+│    └─────┬───┘    └──────┬───┘      └──────┬──┘│
+│          │               │                  │   │
+│    ┌─────▼──────────────▼──────────────┬───▼──┐│
+│    │   Uses MCPs via MCPConnectionSvc  │      ││
+│    └───────────────────────────────────┴──────┘│
+└───────────┬──────────────────────────────────┬─┘
+            │                                  │
+┌───────────▼────────┐            ┌───────────▼────┐
+│   MCP Servers      │            │  MCP Clients   │
+│  - GitHub MCP      │            │ (via configs)  │
+│  - Jira MCP        │            │                │
+│  - Google Drive    │            │                │
+│  - Playwright      │            │                │
+└────────────────────┘            └────────────────┘
+            │
+┌───────────▼──────────────────────────────────────┐
+│   External Services                              │
+│  GitHub API, Jira API, Google Drive, Browser     │
+└────────────────────────────────────────────────┘
+```
+
 ### Execution Model
-- **Host**: MCP Server with a single tool: `ideaToProd`
-- **Input**: Application idea (as prompt)
+- **Host**: Desktop app OR Web server
+- **Input**: Application idea via UI
+- **Configuration**: Managed by MCPSetupService + MCPConnectionService
 - **Output**: Final tested and validated code (or deployed application)
 - **Agent Count**: 5 core agents + 1 optional deployment agent
 
@@ -27,26 +94,44 @@ Receive a high-level application idea and automatically generate:
 
 ## Workflow Overview
 
+### User Configuration Flow
 ```
-Idea Input
+User enters MCP config in UI (Desktop/Web)
     ↓
-Agent 1: High-Level Design -> google drive MCP
+MCPSetupService.validate_config()
     ↓
-Agent 2: Detailed Design & Task Generation <- google drive MCP
-    ↓ -> jira MCP
-Agent 3: Code Generation <- jira MCP  
-    ↓ -> github MCP
-Agent 4: Unit Test Generation <- github MCP
-    ↓ -> github MCP
-Agent 5: Test Execution
+MCPSetupService.save_config() → ConfigStore
+    ↓
+MCPSetupService.test_mcp()  (tests actual MCP with config)
+    ↓
+UI shows test results + status
+```
+
+### Processing Flow
+```
+User submits idea via UI
+    ↓
+IdeaToProdTeam requests MCPs from MCPConnectionService
+    ↓
+MCPConnectionService initializes MCPs with saved configs
+    ↓
+Agent 1: High-Level Design (Uses MCPs as needed)
+    ↓
+Agent 2: Detailed Design (Uses MCPs as needed)
+    ↓
+Agent 3: Code Generation (Uses GitHub MCP)
+    ↓
+Agent 4: Unit Test Generation (Uses GitHub MCP)
+    ↓
+Agent 5: Test Execution (Uses Playwright MCP)
     ↓
 [Tests Pass?] → Yes → Return Code
     ↓ No
     └→ Back to Agent 4 (regenerate tests/code)
     ↓
-Agent 6 Deployment -> any deployment MCP
+[Optional] Agent 6: Deployment
     ↓
-   Back to user
+Results back to UI
 ```
 
 ---
@@ -229,6 +314,108 @@ If tests fail in Agent 5:
 
 ---
 
+## Services Layer (Core Integration)
+
+### MCPSetupService
+**Location**: `src/idea_to_prod/services/mcp_setup_service.py`
+
+**Purpose**: Configuration management and testing interface for MCPs
+
+**Key Methods**:
+- `load_config(platform: str)` → Load saved MCP configuration
+- `save_config(platform: str, config: dict)` → Persist configuration
+- `validate_config(platform: str, config: dict)` → Validate format and credentials
+- `test_mcp(platform: str, config: dict)` → Test MCP with given config (stub mode)
+- `list_all_configs()` → Get all saved configurations
+
+**Usage**: Both Desktop App and Web Server use this for tab operations
+
+### MCPConnectionService
+**Location**: `src/idea_to_prod/services/mcp_connection_service.py`
+
+**Purpose**: MCP initialization and lifecycle management
+
+**Key Methods**:
+- `initialize_mcp(platform: str)` → Create MCP instance with saved config
+- `get_mcp_status(platform: str)` → Check connection status
+- `test_all_mcps()` → Test all configured MCPs
+- `get_available_mcps()` → List initialized MCPs
+
+**Usage**: Agents request MCPs from this service during processing
+
+### ConfigStore
+**Location**: `src/idea_to_prod/services/config_storage.py`
+
+**Purpose**: Persistent storage of MCP configurations
+
+**Storage**: JSON files (expandable to database)
+
+**Stores**:
+- GitHub MCP credentials and settings
+- Jira MCP credentials and settings
+- Google Drive MCP credentials and settings
+- Playwright MCP settings
+
+---
+
+## File Structure
+
+```
+idea-to-prod/
+├── src/idea_to_prod/
+│   ├── services/                          # NEW: Shared service layer
+│   │   ├── __init__.py
+│   │   ├── mcp_setup_service.py           # Config UI interface
+│   │   ├── mcp_connection_service.py      # MCP initialization
+│   │   └── config_storage.py              # Config persistence
+│   │
+│   ├── agents/                            # Agent implementations
+│   │   ├── __init__.py
+│   │   ├── team.py                        # Orchestrator (gets MCPs via services)
+│   │   ├── agent_1_hl_design.py
+│   │   ├── agent_2_detailed_design.py
+│   │   ├── agent_3_code_generation.py
+│   │   ├── agent_4_test_generation.py
+│   │   ├── agent_5_test_execution.py
+│   │   └── config.py
+│   │
+│   ├── mcp_servers/                       # MCP implementations (unchanged)
+│   │   ├── __init__.py
+│   │   ├── github_mcp.py
+│   │   ├── jira_mcp.py
+│   │   ├── google_drive_mcp.py
+│   │   ├── playwright_mcp.py
+│   │   ├── config/
+│   │   │   ├── github_config.py
+│   │   │   ├── jira_config.py
+│   │   │   ├── google_drive_config.py
+│   │   │   └── playwright_config.py
+│   │   └── tests/
+│   │
+│   ├── desktop_app.py                     # PyQt6 desktop UI (uses services)
+│   ├── ui_server.py                       # FastAPI web server (uses services)
+│   ├── main.py                            # Entry point
+│   └── __init__.py
+│
+├── run_desktop_app.py                     # Desktop launcher
+├── setup_desktop_app.py                   # Desktop dependency installer
+├── run_ui.py                              # Web server launcher
+├── setup_ui.py                            # Web dependency installer
+│
+├── GENERATED_DOCS/                        # Documentation
+│   ├── ARCHITECTURE.md                    # (this file)
+│   ├── README.md
+│   ├── QUICK_START.md
+│   ├── DESKTOP_VS_WEB.md
+│   └── ...
+│
+├── pyproject.toml                         # Project configuration
+├── uv.lock                                # Locked dependencies
+└── .env.example                           # Environment template
+```
+
+---
+
 ## Technology Stack Recommendations
 
 ### AI Models by Agent
@@ -244,20 +431,20 @@ If tests fail in Agent 5:
 
 ### Required MCP Servers
 
-1. **Google Drive MCP Server**
-   - Purpose: Store design documents
-   - Agents: 1, 2
-   - Operations: Create, save documents
+1. **GitHub MCP Server**
+   - Purpose: Repository management and code storage
+   - Agents: 3, 4, 5
+   - Operations: Create repo, push code, manage branches, pull requests
 
 2. **Jira MCP Server**
    - Purpose: Manage development tasks
    - Agents: 2, 3
    - Operations: Create issues, fetch work items
 
-3. **GitHub MCP Server**
-   - Purpose: Repository management and code storage
-   - Agents: 3, 4
-   - Operations: Create repo, push code, manage branches, pull requests
+3. **Google Drive MCP Server**
+   - Purpose: Store design documents
+   - Agents: 1, 2
+   - Operations: Create, save documents
 
 4. **Playwright MCP Server**
    - Purpose: Test execution and automation
@@ -278,6 +465,12 @@ If tests fail in Agent 5:
 - **Library**: MCP-Use (https://github.com/mcp-use/mcp-use)
 - **Purpose**: Programmatic communication with MCP Servers
 - **Integration**: Embed in agent logic for server interactions
+
+### UI Frameworks
+
+1. **Desktop App**: PyQt6 (native application, no web server)
+2. **Web Server**: FastAPI + Uvicorn (modern async Python framework)
+3. **Frontend**: HTML/CSS/JavaScript (responsive design)
 
 ### Environment Management: UV
 
@@ -308,6 +501,21 @@ See [UV_SETUP.md](UV_SETUP.md) for complete reference guide.
 ---
 
 ## Implementation Considerations
+
+### Configuration Flow
+
+1. **Setup Phase** (User configures MCPs):
+   - User enters credentials in Desktop/Web UI tabs
+   - MCPSetupService.validate_config() checks format
+   - MCPSetupService.save_config() persists to ConfigStore
+   - MCPSetupService.test_mcp() tests with actual MCP instance
+   - UI displays results
+
+2. **Runtime Phase** (Agents process idea):
+   - Team.process_idea() called
+   - Team requests initialized MCPs from MCPConnectionService
+   - MCPConnectionService loads saved configs from ConfigStore
+   - Agents use MCPs as needed during processing
 
 ### Model Selection Strategy
 
@@ -362,6 +570,7 @@ See [UV_SETUP.md](UV_SETUP.md) for complete reference guide.
 3. **Custom MCP Client**: Build a simple client for testing
 
 ### Sample Input (Test Case)
+
 
 ```
 Idea: Build a todo application with priority levels, 

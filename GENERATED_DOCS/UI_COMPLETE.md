@@ -20,10 +20,13 @@ IdeaToProdAgent/
 ├── UI_README.md                           📖 Complete documentation
 ├── UI_IMPLEMENTATION_SUMMARY.md           📖 Technical details
 └── src/idea_to_prod/
-    ├── __init__.py                        ✏️ Updated with exports
+    ├── services/                          ✨ NEW: Shared service layer
+    │   ├── mcp_setup_service.py
+    │   ├── mcp_connection_service.py
+    │   └── config_storage.py
     ├── ui_server.py                       ⭐ FastAPI web server
     └── agents/
-        └── team.py                        ✏️ Added MCP testing
+        └── team.py                        ✏️ Uses MCPConnectionService
 ```
 
 ## 🎯 UI Features Overview
@@ -143,20 +146,29 @@ http://localhost:8000
 
 ## 📊 Architecture
 
+### Layered Design
+```
+FastAPI Web Server (ui_server.py)
+        ↓
+Services Layer (MCPSetupService, MCPConnectionService)
+        ↓
+Agent Pipeline (IdeaToProdTeam)
+        ↓
+MCP Servers (GitHub, Jira, Google Drive, Playwright)
+```
+
+**Key Point**: The web server uses the same services layer that the desktop app uses. This means:
+- ✅ Configuration is interchangeable
+- ✅ Both test MCPs identically
+- ✅ Same backend logic for both UIs
+- ✅ Easy to add more UI frontends later
+
 ### Technology Stack
 - **Backend**: FastAPI (Python web framework)
 - **Server**: Uvicorn (ASGI server)
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla - no frameworks)
 - **API**: RESTful with JSON payloads
-
-### Integration Points
-```
-UI (FastAPI) 
-  ├─→ IdeaToProdTeam.process_idea()
-  ├─→ IdeaToProdTeam.test_mcp_connections()
-  └─→ IdeaToProdTeam._test_*_mcp()
-       └─→ Individual MCP Servers (GitHub, Jira, etc.)
-```
+- **Services**: MCPSetupService, MCPConnectionService
 
 ## 🔌 API Endpoints
 

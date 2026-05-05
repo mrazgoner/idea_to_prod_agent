@@ -7,10 +7,18 @@ A **native PyQt6 desktop application** that provides the same features as the we
 ## How It's Different
 
 ```
-WEB UI:                          DESKTOP APP:
-Browser ←→ HTTP ←→ Server        Python GUI ←→ Backend Services
-(Remote)    (Network)            (Local)      (In-process)
+WEB UI:                              DESKTOP APP:
+Browser ←→ HTTP ←→ FastAPI Server    PyQt6 GUI ←→ Backend Services
+(Remote)    (Network)                (Local)      (In-process)
+
+Both use the same Services Layer:
+        ↓
+  MCPSetupService
+  MCPConnectionService
+  ConfigStore
 ```
+
+The desktop app is **not a separate implementation**—it's the same backend logic with a different UI frontend.
 
 **Desktop Advantages:**
 - ✅ Faster startup (1-2 seconds)
