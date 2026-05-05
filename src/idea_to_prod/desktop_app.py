@@ -20,6 +20,8 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QIcon, QColor, QPixmap
 
 from idea_to_prod.agents.team import IdeaToProdTeam
+from idea_to_prod.services.mcp_setup_service import MCPSetupService
+from idea_to_prod.services.mcp_connection_service import MCPConnectionService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -59,13 +61,13 @@ class TestMCPWorker(QThread):
     finished = pyqtSignal(dict)
     error = pyqtSignal(str)
     
-    def __init__(self, team: IdeaToProdTeam):
+    def __init__(self, mcp_setup_service: MCPSetupService):
         super().__init__()
-        self.team = team
+        self.mcp_setup_service = mcp_setup_service
     
     def run(self):
         try:
-            result = self.team.test_mcp_connections()
+            result = self.mcp_setup_service.test_all_mcps()
             self.finished.emit(result)
         except Exception as e:
             self.error.emit(str(e))
@@ -263,6 +265,7 @@ class IdeaToProdApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.team = IdeaToProdTeam()
+        self.mcp_setup_service = MCPSetupService()
         self.process_worker = None
         self.mcp_worker = None
         self.init_ui()
@@ -425,7 +428,7 @@ class IdeaToProdApp(QMainWindow):
         layout = QFormLayout()
         
         mode = QComboBox()
-        mode.addItems(["Stub (Testing)", "API (Real)"])
+        mode.addItems(["stub", "real"])
         layout.addRow("Mode:", mode)
         
         token = QLineEdit()
@@ -444,7 +447,7 @@ class IdeaToProdApp(QMainWindow):
         logging_checkbox = QCheckBox("Enable Logging")
         layout.addRow("", logging_checkbox)
         
-        save_button = QPushButton("Save GitHub Config")
+        save_button = QPushButton("Save & Test GitHub Config")
         save_button.setStyleSheet("""
             QPushButton {
                 background-color: #667eea;
@@ -453,7 +456,35 @@ class IdeaToProdApp(QMainWindow):
                 border-radius: 4px;
             }
         """)
-        save_button.clicked.connect(lambda: self.show_status("GitHub configuration saved!", "success"))
+        
+        def save_github_config():
+            config = {
+                "mode": mode.currentText(),
+                "token": token.text() if token.text() else None,
+                "username": username.text() if username.text() else None,
+                "base_url": url.text(),
+                "enable_logging": logging_checkbox.isChecked()
+            }
+            
+            is_valid, error_msg = self.mcp_setup_service.validate_config("GitHub", config)
+            if not is_valid:
+                self.show_status(f"GitHub config invalid: {error_msg}", "error")
+                return
+            
+            success, msg = self.mcp_setup_service.save_config("GitHub", config)
+            if success:
+                self.show_status(f"Testing GitHub MCP...", "info")
+                result = self.mcp_setup_service.test_mcp("GitHub", config)
+                if result.get("success"):
+                    self.show_status("✓ GitHub config saved and tested successfully!", "success")
+                    self.mcp_status.update_status("GitHub", True)
+                else:
+                    self.show_status(f"GitHub config saved but test failed: {result.get('error')}", "warning")
+                    self.mcp_status.update_status("GitHub", False)
+            else:
+                self.show_status(f"Failed to save GitHub config: {msg}", "error")
+        
+        save_button.clicked.connect(save_github_config)
         layout.addRow("", save_button)
         
         widget.setLayout(layout)
@@ -465,7 +496,7 @@ class IdeaToProdApp(QMainWindow):
         layout = QFormLayout()
         
         mode = QComboBox()
-        mode.addItems(["Stub (Testing)", "API (Real)"])
+        mode.addItems(["stub", "real"])
         layout.addRow("Mode:", mode)
         
         url = QLineEdit()
@@ -484,7 +515,7 @@ class IdeaToProdApp(QMainWindow):
         logging_checkbox = QCheckBox("Enable Logging")
         layout.addRow("", logging_checkbox)
         
-        save_button = QPushButton("Save Jira Config")
+        save_button = QPushButton("Save & Test Jira Config")
         save_button.setStyleSheet("""
             QPushButton {
                 background-color: #667eea;
@@ -493,7 +524,35 @@ class IdeaToProdApp(QMainWindow):
                 border-radius: 4px;
             }
         """)
-        save_button.clicked.connect(lambda: self.show_status("Jira configuration saved!", "success"))
+        
+        def save_jira_config():
+            config = {
+                "mode": mode.currentText(),
+                "instance_url": url.text() if url.text() else None,
+                "email": email.text() if email.text() else None,
+                "api_token": token.text() if token.text() else None,
+                "enable_logging": logging_checkbox.isChecked()
+            }
+            
+            is_valid, error_msg = self.mcp_setup_service.validate_config("Jira", config)
+            if not is_valid:
+                self.show_status(f"Jira config invalid: {error_msg}", "error")
+                return
+            
+            success, msg = self.mcp_setup_service.save_config("Jira", config)
+            if success:
+                self.show_status(f"Testing Jira MCP...", "info")
+                result = self.mcp_setup_service.test_mcp("Jira", config)
+                if result.get("success"):
+                    self.show_status("✓ Jira config saved and tested successfully!", "success")
+                    self.mcp_status.update_status("Jira", True)
+                else:
+                    self.show_status(f"Jira config saved but test failed: {result.get('error')}", "warning")
+                    self.mcp_status.update_status("Jira", False)
+            else:
+                self.show_status(f"Failed to save Jira config: {msg}", "error")
+        
+        save_button.clicked.connect(save_jira_config)
         layout.addRow("", save_button)
         
         widget.setLayout(layout)
@@ -505,7 +564,7 @@ class IdeaToProdApp(QMainWindow):
         layout = QFormLayout()
         
         mode = QComboBox()
-        mode.addItems(["Stub (Testing)", "API (Real)"])
+        mode.addItems(["stub", "real"])
         layout.addRow("Mode:", mode)
         
         creds = QLineEdit()
@@ -519,7 +578,7 @@ class IdeaToProdApp(QMainWindow):
         logging_checkbox = QCheckBox("Enable Logging")
         layout.addRow("", logging_checkbox)
         
-        save_button = QPushButton("Save Google Drive Config")
+        save_button = QPushButton("Save & Test Google Drive Config")
         save_button.setStyleSheet("""
             QPushButton {
                 background-color: #667eea;
@@ -528,7 +587,34 @@ class IdeaToProdApp(QMainWindow):
                 border-radius: 4px;
             }
         """)
-        save_button.clicked.connect(lambda: self.show_status("Google Drive configuration saved!", "success"))
+        
+        def save_gdrive_config():
+            config = {
+                "mode": mode.currentText(),
+                "credentials_path": creds.text() if creds.text() else None,
+                "folder_id": folder.text() if folder.text() else None,
+                "enable_logging": logging_checkbox.isChecked()
+            }
+            
+            is_valid, error_msg = self.mcp_setup_service.validate_config("Google Drive", config)
+            if not is_valid:
+                self.show_status(f"Google Drive config invalid: {error_msg}", "error")
+                return
+            
+            success, msg = self.mcp_setup_service.save_config("Google Drive", config)
+            if success:
+                self.show_status(f"Testing Google Drive MCP...", "info")
+                result = self.mcp_setup_service.test_mcp("Google Drive", config)
+                if result.get("success"):
+                    self.show_status("✓ Google Drive config saved and tested successfully!", "success")
+                    self.mcp_status.update_status("Google Drive", True)
+                else:
+                    self.show_status(f"Google Drive config saved but test failed: {result.get('error')}", "warning")
+                    self.mcp_status.update_status("Google Drive", False)
+            else:
+                self.show_status(f"Failed to save Google Drive config: {msg}", "error")
+        
+        save_button.clicked.connect(save_gdrive_config)
         layout.addRow("", save_button)
         
         widget.setLayout(layout)
@@ -540,7 +626,7 @@ class IdeaToProdApp(QMainWindow):
         layout = QFormLayout()
         
         mode = QComboBox()
-        mode.addItems(["Stub (Testing)", "API (Real)"])
+        mode.addItems(["stub", "real"])
         layout.addRow("Mode:", mode)
         
         headless = QCheckBox("Headless Mode")
@@ -555,7 +641,7 @@ class IdeaToProdApp(QMainWindow):
         logging_checkbox = QCheckBox("Enable Logging")
         layout.addRow("", logging_checkbox)
         
-        save_button = QPushButton("Save Playwright Config")
+        save_button = QPushButton("Save & Test Playwright Config")
         save_button.setStyleSheet("""
             QPushButton {
                 background-color: #667eea;
@@ -564,7 +650,40 @@ class IdeaToProdApp(QMainWindow):
                 border-radius: 4px;
             }
         """)
-        save_button.clicked.connect(lambda: self.show_status("Playwright configuration saved!", "success"))
+        
+        def save_pw_config():
+            try:
+                timeout_val = int(timeout.text())
+            except ValueError:
+                self.show_status("Playwright timeout must be a number", "error")
+                return
+            
+            config = {
+                "mode": mode.currentText(),
+                "headless": headless.isChecked(),
+                "timeout": timeout_val,
+                "enable_logging": logging_checkbox.isChecked()
+            }
+            
+            is_valid, error_msg = self.mcp_setup_service.validate_config("Playwright", config)
+            if not is_valid:
+                self.show_status(f"Playwright config invalid: {error_msg}", "error")
+                return
+            
+            success, msg = self.mcp_setup_service.save_config("Playwright", config)
+            if success:
+                self.show_status(f"Testing Playwright MCP...", "info")
+                result = self.mcp_setup_service.test_mcp("Playwright", config)
+                if result.get("success"):
+                    self.show_status("✓ Playwright config saved and tested successfully!", "success")
+                    self.mcp_status.update_status("Playwright", True)
+                else:
+                    self.show_status(f"Playwright config saved but test failed: {result.get('error')}", "warning")
+                    self.mcp_status.update_status("Playwright", False)
+            else:
+                self.show_status(f"Failed to save Playwright config: {msg}", "error")
+        
+        save_button.clicked.connect(save_pw_config)
         layout.addRow("", save_button)
         
         widget.setLayout(layout)
@@ -619,7 +738,7 @@ class IdeaToProdApp(QMainWindow):
         self.show_status("Testing MCP connections...", "info")
         self.test_button.setEnabled(False)
         
-        self.mcp_worker = TestMCPWorker(self.team)
+        self.mcp_worker = TestMCPWorker(self.mcp_setup_service)
         self.mcp_worker.finished.connect(self.on_mcp_test_finished)
         self.mcp_worker.error.connect(self.on_mcp_test_error)
         self.mcp_worker.start()
@@ -628,15 +747,22 @@ class IdeaToProdApp(QMainWindow):
         """Handle MCP test completion"""
         self.test_button.setEnabled(True)
         
-        if result.get("success"):
-            self.show_status("All MCPs are connected!", "success")
+        # Check if any tests passed
+        passed = sum(1 for r in result.values() if isinstance(r, dict) and r.get("success"))
+        total = len(result)
+        
+        if passed == total:
+            self.show_status(f"✓ All {total} MCPs tested successfully!", "success")
+        elif passed > 0:
+            self.show_status(f"Partial success: {passed}/{total} MCPs connected", "warning")
         else:
-            failed = ", ".join(result.get("failed_platforms", []))
-            self.show_status(f"Some MCPs failed: {failed}", "warning")
+            self.show_status("No MCPs configured yet. Configure them in the tabs above.", "warning")
         
         # Update status cards
-        for platform, platform_result in result.get("platform_results", {}).items():
-            self.mcp_status.update_status(platform, platform_result.get("connected", False))
+        for platform, platform_result in result.items():
+            if isinstance(platform_result, dict):
+                connected = platform_result.get("success", False)
+                self.mcp_status.update_status(platform, connected)
     
     def on_mcp_test_error(self, error: str):
         """Handle MCP test error"""
