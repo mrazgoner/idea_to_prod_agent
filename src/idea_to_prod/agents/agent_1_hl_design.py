@@ -11,6 +11,7 @@ Output: High-level design document (saved to Google Drive)
 from agno.agent import Agent
 
 from idea_to_prod.mcp_servers.google_drive_mcp import GoogleDriveMCPServer
+from idea_to_prod.mcp_servers.ui_control_mcp import UIControlMCPServer
 
 from .config import AGENT_1_MODEL
 
@@ -44,12 +45,18 @@ def create_hl_design_agent() -> Agent:
 6. **Technology Stack**: Recommend initial technology choices
 7. **Design Rationale**: Explain architectural decisions
 
+**IMPORTANT - Human-In-The-Loop Integration:**
+Before using Google Drive or any external MCP tool:
+1. Call UIControl.validate_mcp_config("google_drive") to check if configured
+2. If not configured, call UIControl.request_user_input() and wait for user response
+3. After each significant step, call UIControl.update_ui_status() to log progress and mark MCP access
+
 Output Format:
 - Create a comprehensive design document
 - Use clear sections and subsections
 - Include diagrams/descriptions for system architecture
 - List all identified components
 - Document key design decisions and rationale""",
-        tools=[GoogleDriveMCPServer],
+        tools=[GoogleDriveMCPServer, UIControlMCPServer],
         markdown=True,
     )

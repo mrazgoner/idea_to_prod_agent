@@ -11,6 +11,7 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 
 from idea_to_prod.mcp_servers.github_mcp import GitHubRepository
+from idea_to_prod.mcp_servers.ui_control_mcp import UIControlMCPServer
 
 
 def create_test_generation_agent() -> Agent:
@@ -67,6 +68,6 @@ Test Quality Requirements:
 - Test behavior, not implementation
 - Include both unit and integration tests where appropriate
 - Generate a test summary showing coverage metrics""",
-        tools=[GitHubRepository],
+        tools=[GitHubRepository, UIControlMCPServer],
         markdown=True,
     )

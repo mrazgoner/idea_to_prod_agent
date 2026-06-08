@@ -14,6 +14,7 @@ from agno.agent import Agent
 
 from idea_to_prod.mcp_servers.google_drive_mcp import GoogleDriveMCPServer
 from idea_to_prod.mcp_servers.jira_mcp import JiraMCPServer
+from idea_to_prod.mcp_servers.ui_control_mcp import UIControlMCPServer
 
 from .config import AGENT_2_MODEL
 
@@ -60,6 +61,6 @@ Output Format:
 Output two separate sections:
 1. "DETAILED DESIGN DOCUMENT" - Full specifications
 2. "DEVELOPMENT TASKS" - Jira-formatted work items""",
-        tools=[GoogleDriveMCPServer, JiraMCPServer],
+        tools=[GoogleDriveMCPServer, JiraMCPServer, UIControlMCPServer],
         markdown=True,
     )

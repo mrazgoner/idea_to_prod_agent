@@ -11,6 +11,7 @@ from agno.agent import Agent
 
 from idea_to_prod.mcp_servers.github_mcp import GitHubRepository
 from idea_to_prod.mcp_servers.jira_mcp import JiraMCPServer
+from idea_to_prod.mcp_servers.ui_control_mcp import UIControlMCPServer
 
 from .config import AGENT_3_MODEL
 
@@ -62,6 +63,6 @@ Key Requirements:
 - Include type hints where applicable
 - Use meaningful variable and function names
 - Make the code modular and maintainable""",
-        tools=[JiraMCPServer, GitHubRepository], 
+        tools=[JiraMCPServer, GitHubRepository, UIControlMCPServer], 
         markdown=True,
     )

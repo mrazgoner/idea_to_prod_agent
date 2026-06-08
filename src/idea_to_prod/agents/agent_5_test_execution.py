@@ -16,6 +16,7 @@ from agno.models.openai import OpenAIChat
 
 from idea_to_prod.mcp_servers.github_mcp import GitHubRepository
 from idea_to_prod.mcp_servers.playwright_mcp import PlaywrightServer
+from idea_to_prod.mcp_servers.ui_control_mcp import UIControlMCPServer
 from idea_to_prod.mcp_servers.config.playwright_config import PlaywrightConfig
 
 
@@ -120,6 +121,6 @@ Output Format:
 - Include specific failure details for debugging
 - Provide actionable recommendations
 - Include links to failed test reports and screenshots""",
-        tools=[GitHubRepository, PlaywrightServer],
+        tools=[GitHubRepository, PlaywrightServer, UIControlMCPServer],
         markdown=True,
     )
