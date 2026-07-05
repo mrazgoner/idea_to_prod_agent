@@ -91,7 +91,6 @@ class IdeaToProdApp(QMainWindow):
         """Create collapsible configuration section (MCP Status + Config Tabs)"""
         config_group = QGroupBox("MCP Configuration")
         config_group.setCheckable(True)
-        config_group.setChecked(False)  # Starts collapsed
         config_group.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         
         config_layout = QVBoxLayout()
@@ -108,21 +107,48 @@ class IdeaToProdApp(QMainWindow):
         self.tabs.addTab(self.gdrive_tab, "Google Drive")
         self.tabs.addTab(self.playwright_tab, "Playwright")
         
+        # Set compact height when collapsed
+        self.tabs.setMaximumHeight(35)  # Just tab bar
+        
         config_layout.addWidget(self.tabs)
         config_group.setLayout(config_layout)
         
-        # Set compact height when collapsed
-        config_group.setMaximumHeight(25)  # Just the title bar when unchecked
-        config_group.toggled.connect(lambda checked: self.on_config_toggle(config_group, checked))
+        # Now set checked to False and ensure tabs stay enabled
+        config_group.setChecked(False)  # Starts collapsed
+        self.tabs.setEnabled(True)  # Force enabled after groupbox is set
+        
+        # When tab is clicked, auto-expand the config group
+        self.tabs.tabBarClicked.connect(lambda idx: config_group.setChecked(True))
+        
+        # Store reference for later access
+        self.config_group = config_group
+        
+        # Connect checkbox toggle to expand/collapse
+        config_group.toggled.connect(lambda checked: self.on_config_toggle(checked))
+        
+        # Ensure tabs stay enabled even after all connections
+        QTimer.singleShot(0, lambda: self.tabs.setEnabled(True))
         
         return config_group
     
-    def on_config_toggle(self, config_group: QGroupBox, checked: bool):
+    def on_config_toggle(self, checked: bool):
         """Handle config group toggle to expand/collapse"""
+        # Always keep tabs and their children enabled (never disabled)
+        self.tabs.setEnabled(True)
+        
+        # Re-enable all children of tabs
+        for i in range(self.tabs.count()):
+            widget = self.tabs.widget(i)
+            if widget:
+                widget.setEnabled(True)
+                # Recursively enable all children
+                for child in widget.findChildren(QWidget):
+                    child.setEnabled(True)
+        
         if checked:
-            config_group.setMaximumHeight(16777215)  # No limit (QWIDGETSIZE_MAX)
+            self.tabs.setMaximumHeight(16777215)  # QWIDGETSIZE_MAX - no limit
         else:
-            config_group.setMaximumHeight(25)  # Compact title bar only
+            self.tabs.setMaximumHeight(35)  # Compact - just tab bar
     
     def create_diagram_section(self) -> QWidget:
         """Create workflow diagram section"""
