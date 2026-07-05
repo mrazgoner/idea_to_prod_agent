@@ -15,7 +15,7 @@ from idea_to_prod.services.mcp_connection_service import MCPConnectionService
 from idea_to_prod.mcp_servers.ui_signal_bridge import UISignalBridge
 
 from idea_to_prod.desktop_app.workers import ProcessIdeaWorker, TestMCPWorker
-from idea_to_prod.desktop_app.tabs import GitHubTab, JiraTab, GoogleDriveTab, PlaywrightTab
+from idea_to_prod.desktop_app.tabs import GitHubTab, JiraTab, GoogleDriveTab, PlaywrightTab, BasicConfigTab
 from idea_to_prod.desktop_app.styles import (
     get_primary_button_style, get_success_button_style, get_error_button_style,
     get_success_status_style, get_error_status_style,
@@ -92,11 +92,13 @@ class IdeaToProdApp(QMainWindow):
         
         # Configuration tabs
         self.tabs = QTabWidget()
+        self.basic_config_tab = BasicConfigTab(on_save_callback=self._on_basic_config_save)
         self.github_tab = GitHubTab(on_save_callback=self._on_github_config_save)
         self.jira_tab = JiraTab(on_save_callback=self._on_jira_config_save)
         self.gdrive_tab = GoogleDriveTab(on_save_callback=self._on_gdrive_config_save)
         self.playwright_tab = PlaywrightTab(on_save_callback=self._on_playwright_config_save)
         
+        self.tabs.addTab(self.basic_config_tab, "Basic Config")
         self.tabs.addTab(self.github_tab, "GitHub")
         self.tabs.addTab(self.jira_tab, "Jira")
         self.tabs.addTab(self.gdrive_tab, "Google Drive")
@@ -251,6 +253,19 @@ class IdeaToProdApp(QMainWindow):
         """Append message to logger"""
         self.logger_output.append(message)
     
+    def _on_basic_config_save(self, config: dict):
+        """Handle basic configuration save (models and tokens)"""
+        try:
+            openai_token = config.get("openai_token", "").strip()
+            anthropic_token = config.get("anthropic_token", "").strip()
+            
+            if openai_token or anthropic_token:
+                self.show_status("✓ API tokens saved successfully!", "success")
+            else:
+                self.show_status("⚠ No tokens provided", "warning")
+        except Exception as e:
+            self.show_status(f"Error saving configuration: {str(e)}", "error")
+    
     def _on_github_config_save(self, config: dict):
         """Handle GitHub configuration save"""
         self._save_and_test_mcp_config("GitHub", config)
@@ -385,10 +400,10 @@ class IdeaToProdApp(QMainWindow):
     def update_tab_status(self, platform: str, connected: bool):
         """Update tab button with colored status icon"""
         tab_index_map = {
-            "GitHub": 0,
-            "Jira": 1,
-            "Google Drive": 2,
-            "Playwright": 3
+            "GitHub": 1,
+            "Jira": 2,
+            "Google Drive": 3,
+            "Playwright": 4
         }
         
         if platform in tab_index_map:
@@ -434,13 +449,13 @@ class IdeaToProdApp(QMainWindow):
         
         # Map MCP name to tab index
         mcp_to_tab = {
-            "github": 0,
-            "jira": 1,
-            "google_drive": 2,
-            "playwright": 3
+            "github": 1,
+            "jira": 2,
+            "google_drive": 3,
+            "playwright": 4
         }
         
-        tab_index = mcp_to_tab.get(mcp_name.lower(), 0)
+        tab_index = mcp_to_tab.get(mcp_name.lower(), 1)
         
         # Expand the config group if it exists
         # (find first QGroupBox in the layout)
