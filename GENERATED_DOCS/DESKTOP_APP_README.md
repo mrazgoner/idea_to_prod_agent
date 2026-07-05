@@ -158,10 +158,10 @@ The application window will open immediately.
 - Updates step status visually
 - Animated transitions
 
-#### `MCPStatusPanel` (Custom Widget)
-- Shows connection status for 4 MCPs
-- Color-coded cards (green/red)
-- Real-time updates
+#### Tab Status Indicators
+- MCP status shown in tab button text
+- "✓ Platform" for connected, "✗ Platform" for disconnected
+- Updates after MCP configuration testing
 
 ## Performance
 

@@ -20,7 +20,6 @@ __all__ = [
     'get_generic_button_style',
     # Frames
     'get_step_frame_style', 'get_step_frame_status_style',
-    'get_mcp_card_style', 'get_mcp_card_connected_style', 'get_mcp_card_disconnected_style',
     # Status labels
     'get_status_label_style', 'get_success_status_style', 'get_error_status_style',
     'get_warning_status_style', 'get_info_status_style',

@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QSplitter, QFrame
 )
 from PyQt6.QtCore import Qt, QTimer, QSize
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QIcon, QPixmap, QColor, QPainter
 
 from idea_to_prod.agents.team import IdeaToProdTeam
 from idea_to_prod.services.mcp_setup_service import MCPSetupService
@@ -15,7 +15,7 @@ from idea_to_prod.services.mcp_connection_service import MCPConnectionService
 from idea_to_prod.mcp_servers.ui_signal_bridge import UISignalBridge
 
 from idea_to_prod.desktop_app.workers import ProcessIdeaWorker, TestMCPWorker
-from idea_to_prod.desktop_app.widgets import WorkflowDiagram, MCPStatusPanel
+from idea_to_prod.desktop_app.widgets import WorkflowDiagram
 from idea_to_prod.desktop_app.tabs import GitHubTab, JiraTab, GoogleDriveTab, PlaywrightTab
 from idea_to_prod.desktop_app.styles import (
     get_primary_button_style, get_success_button_style, get_error_button_style,
@@ -95,10 +95,6 @@ class IdeaToProdApp(QMainWindow):
         config_group.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         
         config_layout = QVBoxLayout()
-        
-        # MCP Status panel
-        self.mcp_status = MCPStatusPanel()
-        config_layout.addWidget(self.mcp_status)
         
         # Configuration tabs
         self.tabs = QTabWidget()
@@ -291,10 +287,10 @@ class IdeaToProdApp(QMainWindow):
             result = self.mcp_setup_service.test_mcp(platform, config)
             if result.get("success"):
                 self.show_status(f"✓ {platform} config saved and tested successfully!", "success")
-                self.mcp_status.update_status(platform, True)
+                self.update_tab_status(platform, True)
             else:
                 self.show_status(f"{platform} config saved but test failed: {result.get('error')}", "warning")
-                self.mcp_status.update_status(platform, False)
+                self.update_tab_status(platform, False)
         else:
             self.show_status(f"Failed to save {platform} config: {msg}", "error")
     
@@ -367,11 +363,11 @@ class IdeaToProdApp(QMainWindow):
         else:
             self.show_status("No MCPs configured yet. Configure them in the tabs above.", "warning")
         
-        # Update status cards
+        # Update tab statuses
         for platform, platform_result in result.items():
             if isinstance(platform_result, dict):
                 connected = platform_result.get("success", False)
-                self.mcp_status.update_status(platform, connected)
+                self.update_tab_status(platform, connected)
     
     def on_mcp_test_error(self, error: str):
         """Handle MCP test error"""
@@ -399,6 +395,41 @@ class IdeaToProdApp(QMainWindow):
         
         # Also update status bar
         self.statusBar().showMessage(message)
+    
+    def update_tab_status(self, platform: str, connected: bool):
+        """Update tab button with colored status icon"""
+        tab_index_map = {
+            "GitHub": 0,
+            "Jira": 1,
+            "Google Drive": 2,
+            "Playwright": 3
+        }
+        
+        if platform in tab_index_map:
+            idx = tab_index_map[platform]
+            
+            # Create colored icon pixmap
+            pixmap = QPixmap(16, 16)
+            pixmap.fill(QColor(0, 0, 0, 0))  # Transparent
+            
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            # Draw colored icon
+            if connected:
+                painter.setPen(QColor("#4CAF50"))  # Green
+                painter.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            else:
+                painter.setPen(QColor("#f44336"))  # Red
+                painter.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            
+            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "●")
+            painter.end()
+            
+            # Set icon and text
+            icon = QIcon(pixmap)
+            self.tabs.setTabIcon(idx, icon)
+            self.tabs.setTabText(idx, platform)
     
     # =====================================================================
     # UI Bridge Signal Handlers (Human-In-The-Loop)

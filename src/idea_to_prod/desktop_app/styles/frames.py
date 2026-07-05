@@ -57,39 +57,3 @@ def get_step_frame_status_style(status: str) -> str:
                 padding: 12px;
             }}
         """
-
-
-def get_mcp_card_style() -> str:
-    """Get MCP card default style"""
-    return f"""
-        QFrame {{
-            background-color: {BACKGROUND_LIGHT};
-            border-left: 4px solid {BORDER_LIGHT};
-            border-radius: 6px;
-            padding: 12px;
-        }}
-    """
-
-
-def get_mcp_card_connected_style() -> str:
-    """Get MCP card connected style"""
-    return f"""
-        QFrame {{
-            background-color: {SUCCESS_LIGHT};
-            border-left: 4px solid {STATUS_COMPLETED};
-            border-radius: 6px;
-            padding: 12px;
-        }}
-    """
-
-
-def get_mcp_card_disconnected_style() -> str:
-    """Get MCP card disconnected style"""
-    return f"""
-        QFrame {{
-            background-color: {ERROR_LIGHT};
-            border-left: 4px solid {STATUS_FAILED};
-            border-radius: 6px;
-            padding: 12px;
-        }}
-    """

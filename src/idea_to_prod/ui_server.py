@@ -600,49 +600,6 @@ def get_html_content() -> str:
                 100% { transform: rotate(360deg); }
             }
             
-            .mcp-status {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 15px;
-                margin-bottom: 20px;
-            }
-            
-            .mcp-card {
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
-                border-left: 4px solid #ccc;
-                background: #f5f5f5;
-            }
-            
-            .mcp-card.connected {
-                border-left-color: #4CAF50;
-                background: #e8f5e9;
-            }
-            
-            .mcp-card.disconnected {
-                border-left-color: #f44336;
-                background: #ffebee;
-            }
-            
-            .mcp-card h3 {
-                font-size: 0.95em;
-                margin-bottom: 8px;
-            }
-            
-            .mcp-card .status {
-                font-size: 0.85em;
-                font-weight: 600;
-            }
-            
-            .mcp-card .status.connected {
-                color: #2e7d32;
-            }
-            
-            .mcp-card .status.disconnected {
-                color: #c62828;
-            }
-            
             @media (max-width: 1024px) {
                 .content {
                     grid-template-columns: 1fr;
@@ -724,25 +681,6 @@ Example: A real-time collaboration tool for remote teams with chat, file sharing
                 <!-- MCP Configuration Tabs -->
                 <div class="tabs-section">
                     <h2 class="section-title">MCP Platform Configuration</h2>
-                    
-                    <div class="mcp-status" id="mcpStatus">
-                        <div class="mcp-card" id="github-status">
-                            <h3>GitHub</h3>
-                            <div class="status">Checking...</div>
-                        </div>
-                        <div class="mcp-card" id="jira-status">
-                            <h3>Jira</h3>
-                            <div class="status">Checking...</div>
-                        </div>
-                        <div class="mcp-card" id="google-drive-status">
-                            <h3>Google Drive</h3>
-                            <div class="status">Checking...</div>
-                        </div>
-                        <div class="mcp-card" id="playwright-status">
-                            <h3>Playwright</h3>
-                            <div class="status">Checking...</div>
-                        </div>
-                    </div>
                     
                     <div class="tabs-header">
                         <button class="tab-button active" onclick="switchTab('github')">GitHub</button>
@@ -1067,26 +1005,29 @@ Example: A real-time collaboration tool for remote teams with chat, file sharing
             
             function updateMCPStatus(data) {
                 const mcpPlatforms = {
-                    'GitHub': 'github-status',
-                    'Jira': 'jira-status',
-                    'Google Drive': 'google-drive-status',
-                    'Playwright': 'playwright-status'
+                    'GitHub': 'github',
+                    'Jira': 'jira',
+                    'Google Drive': 'google-drive',
+                    'Playwright': 'playwright'
                 };
                 
-                for (const [platform, elementId] of Object.entries(mcpPlatforms)) {
-                    const statusEl = document.getElementById(elementId);
-                    const result = data.platform_results[platform];
+                for (const [platform, tabName] of Object.entries(mcpPlatforms)) {
+                    const buttons = document.querySelectorAll('.tab-button');
+                    let tabButton = null;
                     
-                    if (result && result.connected) {
-                        statusEl.classList.add('connected');
-                        statusEl.classList.remove('disconnected');
-                        statusEl.querySelector('.status').textContent = '✓ Connected';
-                        statusEl.querySelector('.status').className = 'status connected';
-                    } else {
-                        statusEl.classList.add('disconnected');
-                        statusEl.classList.remove('connected');
-                        statusEl.querySelector('.status').textContent = '✗ Disconnected';
-                        statusEl.querySelector('.status').className = 'status disconnected';
+                    // Find the tab button for this platform
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes(platform)) {
+                            tabButton = btn;
+                        }
+                    });
+                    
+                    if (tabButton) {
+                        const result = data.platform_results?.[platform];
+                        const connected = result?.connected || false;
+                        const statusColor = connected ? '#4CAF50' : '#f44336';
+                        const statusIcon = connected ? '✓' : '✗';
+                        tabButton.innerHTML = `<span style="color: ${statusColor};">${statusIcon}</span> ${platform}`;
                     }
                 }
             }

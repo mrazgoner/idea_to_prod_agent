@@ -63,7 +63,6 @@ All visual styling extracted into reusable functions:
 - `get_success_button_style()` - Success action buttons
 - `get_error_button_style()` - Error/cancel buttons
 - `get_step_frame_style()` - Step display boxes
-- `get_mcp_card_style()` - MCP status cards
 - `get_status_label_style()` - Status message labels
 - Color constants for consistent theming
 
@@ -75,7 +74,7 @@ Base classes that reduce boilerplate:
 ### Widgets (`widgets/`)
 Custom PyQt6 components:
 - **WorkflowDiagram**: Shows 5-step processing pipeline with real-time status updates
-- **MCPStatusPanel**: Grid display of 4 MCP platform connection statuses
+- Tab buttons now display status: "✓ GitHub" for connected, "✗ GitHub" for disconnected
 
 ### Configuration Tabs (`tabs/`)
 Each MCP platform has its own tab:

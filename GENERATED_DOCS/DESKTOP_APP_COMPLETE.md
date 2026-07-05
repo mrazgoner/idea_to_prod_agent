@@ -112,10 +112,10 @@ That's it! The desktop app window opens immediately.
 - Animates step status changes
 - Shows progress visually
 
-### 5. **MCPStatusPanel** (Custom Widget)
-- Displays MCP connection status
-- Shows 4 cards (GitHub, Jira, Google Drive, Playwright)
-- Color-coded (green = connected, red = disconnected)
+### 5. **Tab Status Indicators**
+- MCP connection status displayed in tab button text
+- Format: "✓ GitHub" for connected, "✗ GitHub" for disconnected
+- Updated dynamically when MCP config is tested
 
 ## Architecture
 

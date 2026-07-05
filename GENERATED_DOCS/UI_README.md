@@ -226,7 +226,6 @@ Response: {
 - Save buttons per form
 
 ### Status Dashboard
-- 4 MCP cards (GitHub, Jira, Google Drive, Playwright)
 - Real-time status updates
 - Manual refresh capability
 - Connected/Disconnected visual indicators

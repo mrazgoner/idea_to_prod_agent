@@ -48,7 +48,7 @@ desktop_app/
 
 ### Widgets (`widgets/`)
 - **WorkflowDiagram**: Displays 5-step processing pipeline with status indicators
-- **MCPStatusPanel**: Shows connection status for 4 MCP platforms (2x2 grid)
+- **Status in Tab Names**: MCP connection status shown as ✓/✗ prefix in tab button text
 
 ### Configuration Tabs (`tabs/`)
 Each tab inherits from `TabTemplate` and provides platform-specific configuration:
@@ -61,7 +61,7 @@ Each tab inherits from `TabTemplate` and provides platform-specific configuratio
 Centralized styling with no hardcoded strings:
 - **colors.py**: All color constants (primary, success, error, warning, info, etc.)
 - **buttons.py**: Button style functions (primary, success, error, generic)
-- **frames.py**: Frame styling for step boxes and MCP cards
+- **frames.py**: Frame styling for step boxes
 - **status_labels.py**: Status message styling
 
 ### Templates (`templates/`)
