@@ -15,7 +15,6 @@ from idea_to_prod.services.mcp_connection_service import MCPConnectionService
 from idea_to_prod.mcp_servers.ui_signal_bridge import UISignalBridge
 
 from idea_to_prod.desktop_app.workers import ProcessIdeaWorker, TestMCPWorker
-from idea_to_prod.desktop_app.widgets import WorkflowDiagram
 from idea_to_prod.desktop_app.tabs import GitHubTab, JiraTab, GoogleDriveTab, PlaywrightTab
 from idea_to_prod.desktop_app.styles import (
     get_primary_button_style, get_success_button_style, get_error_button_style,
@@ -67,15 +66,11 @@ class IdeaToProdApp(QMainWindow):
         config_section = self.create_collapsible_config()
         main_layout.addWidget(config_section)
         
-        # 2. MIDDLE: Workflow diagram (compact, small height)
-        diagram_section = self.create_diagram_section()
-        main_layout.addWidget(diagram_section)
-        
-        # 3. MAIN: Input area (takes ~70% of remaining space)
+        # 2. MAIN: Input area (takes ~70% of remaining space)
         input_section = self.create_input_section()
         main_layout.addWidget(input_section, 3)  # Stretch factor 3
         
-        # 4. BOTTOM: Expandable logger (takes ~30% of remaining space)
+        # 3. BOTTOM: Expandable logger (takes ~30% of remaining space)
         logger_section = self.create_logger_section()
         main_layout.addWidget(logger_section, 1)  # Stretch factor 1
         
@@ -133,41 +128,13 @@ class IdeaToProdApp(QMainWindow):
     
     def on_config_toggle(self, checked: bool):
         """Handle config group toggle to expand/collapse"""
-        # Always keep tabs and their children enabled (never disabled)
+        # Always keep tabs enabled (never disabled)
         self.tabs.setEnabled(True)
-        
-        # Re-enable all children of tabs
-        for i in range(self.tabs.count()):
-            widget = self.tabs.widget(i)
-            if widget:
-                widget.setEnabled(True)
-                # Recursively enable all children
-                for child in widget.findChildren(QWidget):
-                    child.setEnabled(True)
         
         if checked:
             self.tabs.setMaximumHeight(16777215)  # QWIDGETSIZE_MAX - no limit
         else:
             self.tabs.setMaximumHeight(35)  # Compact - just tab bar
-    
-    def create_diagram_section(self) -> QWidget:
-        """Create workflow diagram section"""
-        diagram_widget = QFrame()
-        diagram_layout = QVBoxLayout()
-        
-        diagram_label = QLabel("Processing Pipeline")
-        diagram_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
-        
-        self.workflow_diagram = WorkflowDiagram()
-        self.workflow_diagram.setMaximumHeight(80)  # Compact height
-        
-        diagram_layout.addWidget(diagram_label)
-        diagram_layout.addWidget(self.workflow_diagram)
-        diagram_layout.setContentsMargins(0, 0, 0, 0)
-        diagram_layout.setSpacing(5)
-        
-        diagram_widget.setLayout(diagram_layout)
-        return diagram_widget
     
     def create_input_section(self) -> QWidget:
         """Create input section (idea input + buttons)"""
@@ -332,7 +299,6 @@ class IdeaToProdApp(QMainWindow):
         self.process_button.setEnabled(False)
         self.test_button.setEnabled(False)
         self.reset_button.setEnabled(False)
-        self.workflow_diagram.reset()
         
         self.process_worker = ProcessIdeaWorker(self.team, idea)
         self.process_worker.finished.connect(self.on_process_finished)
@@ -342,14 +308,10 @@ class IdeaToProdApp(QMainWindow):
     
     def on_process_progress(self, message: str, step: int):
         """Update progress during processing"""
-        self.statusBar().showMessage(message)
-        self.workflow_diagram.set_step_status(step, "active")
-        if step > 1:
-            self.workflow_diagram.set_step_status(step - 1, "completed")
+        self.statusBar().showMessage(f"[Step {step}] {message}")
     
     def on_process_finished(self, result: dict):
         """Handle process completion"""
-        self.workflow_diagram.set_step_status(5, "completed")
         self.show_status("Idea processed successfully!", "success")
         self.statusBar().showMessage("Ready")
         self.process_button.setEnabled(True)
@@ -403,8 +365,6 @@ class IdeaToProdApp(QMainWindow):
     def reset_form(self):
         """Reset the form"""
         self.idea_input.clear()
-        self.workflow_diagram.reset()
-        self.clear_logger()
         self.statusBar().showMessage("Ready")
     
     def show_status(self, message: str, status_type: str = "info"):
@@ -511,10 +471,9 @@ class IdeaToProdApp(QMainWindow):
     def on_mcp_accessed(self, step_num: int, mcp_list: list):
         """
         Handle MCP access signal from UIControl tool.
-        Marks MCPs on the diagram at the step where they're accessed.
+        Updates the logger with MCP access info.
         """
-        if self.workflow_diagram:
-            self.workflow_diagram.mark_mcp_access(step_num, mcp_list)
+        pass
     
     def on_continue_clicked(self):
         """
